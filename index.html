@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111110">
+<meta name="color-scheme" content="dark">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="運動管理アプリ">
+<meta name="format-detection" content="telephone=no">
+<title>運動管理アプリ</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<main id="view-calendar" class="view" aria-label="カレンダー"></main>
+<main id="view-analysis" class="view" aria-label="分析" hidden></main>
+
+<button id="fab" class="fab" data-action="add-record" aria-label="運動を記録">
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+</button>
+
+<nav class="tabbar" aria-label="メインメニュー">
+  <button class="tab" data-action="tab" data-tab="calendar" aria-current="page">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>
+    <span>カレンダー</span>
+  </button>
+  <button class="tab" data-action="tab" data-tab="analysis">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20V11M12 20V5M19 20v-6"/></svg>
+    <span>分析</span>
+  </button>
+</nav>
+
+<!-- 記録の追加・編集 -->
+<div id="sheet-record" class="sheet" role="dialog" aria-modal="true" aria-labelledby="record-title" hidden></div>
+
+<!-- 設定 -->
+<div id="sheet-settings" class="sheet" role="dialog" aria-modal="true" aria-labelledby="settings-title" hidden>
+  <div class="sheet-head">
+    <button class="icon-btn" data-action="close-sheet" aria-label="閉じる">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <h2 id="settings-title">設定</h2>
+    <span class="icon-spacer"></span>
+  </div>
+  <div class="sheet-scroll">
+    <section class="card stack">
+      <h3>データのバックアップ</h3>
+      <p class="muted small">記録はこのiPhoneの中だけに保存されています。機種変更やもしもの時のために、ときどき書き出しておくと安心です。</p>
+      <button class="secondary" data-action="export">バックアップを書き出す</button>
+      <label class="secondary as-button" for="import-file">バックアップから読み込む</label>
+      <input id="import-file" type="file" accept="application/json,.json" hidden>
+    </section>
+    <section class="card stack">
+      <h3>数え方</h3>
+      <p class="muted small">「回数」は運動した日の数です（同じ日に複数の種目をしても1回）。「平均◯日に1回」は、期間の日数（今日まで）÷ 運動した日数 で計算しています。種目別の回数は、種目ごとの記録の数です。</p>
+    </section>
+    <p class="muted small center" id="app-version"></p>
+  </div>
+</div>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

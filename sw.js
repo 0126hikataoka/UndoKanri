@@ -1,6 +1,6 @@
 // 運動管理アプリ Service Worker（オフラインで起動できるようにする）
 // ファイルを更新したら CACHE の番号を上げてください。
-const CACHE = 'undo-kanri-v1';
+const CACHE = 'undo-kanri-v2';
 const ASSETS = [
   './',
   './index.html',

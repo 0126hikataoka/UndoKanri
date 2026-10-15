@@ -19,6 +19,7 @@
 <body>
 
 <main id="view-calendar" class="view" aria-label="カレンダー"></main>
+<main id="view-stopwatch" class="view" aria-label="ストップウォッチ" hidden></main>
 <main id="view-analysis" class="view" aria-label="分析" hidden></main>
 
 <button id="fab" class="fab" data-action="add-record" aria-label="運動を記録">
@@ -29,6 +30,10 @@
   <button class="tab" data-action="tab" data-tab="calendar" aria-current="page">
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>
     <span>カレンダー</span>
+  </button>
+  <button class="tab" data-action="tab" data-tab="stopwatch">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 9.5v4l2.5 2M9.5 2.5h5M19 6l1.5-1.5"/></svg>
+    <span>ストップウォッチ</span>
   </button>
   <button class="tab" data-action="tab" data-tab="analysis">
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20V11M12 20V5M19 20v-6"/></svg>
@@ -59,6 +64,7 @@
     <section class="card stack">
       <h3>数え方</h3>
       <p class="muted small">「回数」は運動した日の数です（同じ日に複数の種目をしても1回）。「平均◯日に1回」は、期間の日数（今日まで）÷ 運動した日数 で計算しています。種目別の回数は、種目ごとの記録の数です。</p>
+      <p class="muted small">「集中度」は記録ごとに −10（いまいち）〜 +10（良かった）で付けられます。運動時間はストップウォッチで測った時間が入ります。</p>
     </section>
     <p class="muted small center" id="app-version"></p>
   </div>

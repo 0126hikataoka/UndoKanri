@@ -315,3 +315,67 @@ textarea.memo {
 @media (prefers-reduced-motion: reduce) {
   .sheet, .toast { transition: none; }
 }
+
+/* ---------- tabs (3つ) ---------- */
+.tab { flex: 1 1 0; max-width: 130px; }
+
+/* ---------- stopwatch ---------- */
+.sw-dial { position: relative; width: min(290px, 78vw); aspect-ratio: 1; align-self: center; margin-top: 8px; }
+.sw-dial svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.sw-dial circle#sw-ring { transition: stroke-dashoffset 0.1s linear; }
+.sw-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+.sw-clock { font-size: clamp(44px, 14vw, 56px); letter-spacing: -1px; }
+.sw-tenth { font-size: 18px; color: var(--muted); font-weight: 500; }
+.sw-status { margin-top: 6px; font-size: 13px; font-weight: 700; color: var(--muted); }
+.sw-status.on { color: var(--accent); }
+.sw-controls { display: flex; justify-content: space-between; align-items: flex-start; padding: 0 12px; margin-top: 8px; }
+.sw-btn { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 88px; font-size: 12px; color: var(--muted); }
+.sw-btn.main { color: var(--text); font-weight: 700; }
+.sw-round { width: 72px; height: 72px; border-radius: 36px; background: var(--surface2); color: var(--text); display: flex; align-items: center; justify-content: center; }
+.sw-round:active { transform: scale(0.96); }
+.sw-round.big { width: 96px; height: 96px; border-radius: 48px; background: var(--accent); color: var(--accent-ink); box-shadow: 0 6px 20px rgba(0,0,0,0.5); }
+.sw-round.go { background: var(--accent-bg); color: var(--accent); }
+.sw-round:disabled { opacity: 0.35; }
+
+/* ---------- 運動時間 ---------- */
+.dur-box { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 0 4px 0 16px; border-radius: 14px; background: var(--surface); width: 100%; text-align: left; }
+.dur-ico { color: var(--accent); display: inline-flex; }
+.dur-val { flex: 1; font-size: 14px; }
+.dur-val b { font-size: 22px; }
+.dur-clear { width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; color: var(--muted); }
+.dur-use { color: var(--accent); font-size: 14px; font-weight: 700; padding-right: 16px; border: 1.5px dashed #3B4D42; }
+.dur-none { padding-right: 16px; }
+
+/* ---------- 集中度 ---------- */
+.focus-head { align-items: baseline; }
+.focus-val { font-size: 26px; min-width: 3ch; text-align: right; }
+.focus-val.pos { color: var(--accent); }
+.focus-val.neg { color: var(--warn); }
+.focus-box { padding: 12px 16px; border-radius: 14px; background: var(--surface); display: flex; flex-direction: column; gap: 6px; }
+.focus-range {
+  --fc: var(--soft);
+  -webkit-appearance: none; appearance: none; width: 100%; height: 44px; margin: 0; background: transparent; touch-action: pan-y;
+}
+.focus-range.pos { --fc: var(--accent); }
+.focus-range.neg { --fc: var(--warn); }
+.focus-range::-webkit-slider-runnable-track {
+  height: 8px; border-radius: 4px;
+  /* 0（真ん中）から今の値までを色付け */
+  background: linear-gradient(to right,
+    var(--surface3) 0, var(--surface3) min(var(--p), 50%),
+    var(--fc) min(var(--p), 50%), var(--fc) max(var(--p), 50%),
+    var(--surface3) max(var(--p), 50%), var(--surface3) 100%);
+}
+.focus-range::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none; width: 28px; height: 28px; border-radius: 14px; margin-top: -10px;
+  background: var(--text); border: 3px solid var(--fc); box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+.focus-range::-moz-range-track { height: 8px; border-radius: 4px; background: var(--surface3); }
+.focus-range::-moz-range-thumb { width: 24px; height: 24px; border-radius: 12px; background: var(--text); border: 3px solid var(--fc); }
+.focus-scale { display: flex; justify-content: space-between; align-items: flex-end; font-size: 12px; color: var(--muted); }
+.focus-scale .l, .focus-scale .r { display: flex; flex-direction: column; gap: 2px; }
+.focus-scale .l { align-items: flex-start; }
+.focus-scale .r { align-items: flex-end; }
+.focus-scale .l b { color: var(--warn); }
+.focus-scale .r b { color: var(--accent); }
+.focus-scale .c { padding-bottom: 0; }

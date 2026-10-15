@@ -2,8 +2,9 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '1.0.0';
+  const APP_VERSION = '1.1.0';
   const KEY = 'undo-kanri:v1';
+  const SW_KEY = 'undo-kanri:stopwatch';
   const WD = ['日', '月', '火', '水', '木', '金', '土'];
   const PALETTE = [
     ['#6BC08F', 'グリーン'], ['#EB8F66', 'オレンジ'], ['#B39AE0', 'パープル'], ['#6AAEE0', 'ブルー'],
@@ -29,7 +30,12 @@
     minus: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M5 12h14"/></svg>',
     cal: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>',
     gear: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
-    edit: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16v4z"/></svg>'
+    edit: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16v4z"/></svg>',
+    watch: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 9.5v4l2.5 2M9.5 2.5h5"/></svg>',
+    play: '<svg width="34" height="34" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.9l10.2-6.5a1 1 0 0 0 0-1.7L9.5 4.6A1 1 0 0 0 8 5.5z"/></svg>',
+    pause: '<svg width="34" height="34" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg>',
+    reset: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.3-5.6"/><path d="M4 4v4h4"/></svg>',
+    check: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>'
   };
 
   /* ---------------- 保存 ---------------- */
@@ -42,6 +48,9 @@
       d.types.every((t) => t && typeof t.id === 'string' && typeof t.name === 'string' && isHex(t.color)) &&
       d.records.every((r) => r && typeof r.id === 'string' && typeof r.typeId === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(r.date));
   }
+  // 記録の値をきれいにする（時間は秒、集中度は -10〜+10 の整数）
+  const cleanDuration = (v) => (typeof v === 'number' && isFinite(v) && v > 0 ? Math.round(v) : null);
+  const cleanFocus = (v) => (typeof v === 'number' && isFinite(v) ? Math.max(-10, Math.min(10, Math.round(v))) : null);
   function load() {
     try {
       const raw = localStorage.getItem(KEY);
@@ -96,6 +105,50 @@
   }
   function diffText(n) { return n > 0 ? `+${n}回` : n < 0 ? `${n}回` : '±0回'; }
 
+  /* ---------------- 時間・集中度の表示 ---------------- */
+  function fmtDur(sec) {
+    const h = Math.floor(sec / 3600), m = Math.floor(sec / 60) % 60, s = sec % 60;
+    if (h) return `${h}時間${m}分`;
+    if (m) return s ? `${m}分${s}秒` : `${m}分`;
+    return `${s}秒`;
+  }
+  const signed = (v) => (v > 0 ? `+${v}` : String(v));
+  const focusClass = (v) => (v > 0 ? 'pos' : v < 0 ? 'neg' : 'zero');
+  function recMeta(r) {
+    const parts = [];
+    if (r.durationSec) parts.push(fmtDur(r.durationSec));
+    if (typeof r.focus === 'number') parts.push(`集中度 ${signed(r.focus)}`);
+    if (r.memo) parts.push(r.memo);
+    return parts.length ? parts.join(' · ') : 'メモなし';
+  }
+
+  /* ---------------- ストップウォッチ ---------------- */
+  // 開始時刻を保存するので、アプリを閉じても計測は続く
+  function loadSw() {
+    try {
+      const s = JSON.parse(localStorage.getItem(SW_KEY) || 'null');
+      if (s && typeof s.base === 'number' && typeof s.startedAt === 'number') return { running: !!s.running, base: s.base, startedAt: s.startedAt };
+    } catch (e) { /* 初期状態へ */ }
+    return { running: false, base: 0, startedAt: 0 };
+  }
+  let sw = loadSw();
+  const saveSw = () => { try { localStorage.setItem(SW_KEY, JSON.stringify(sw)); } catch (e) { /* 無視 */ } };
+  const swMs = () => Math.max(0, sw.base + (sw.running ? Date.now() - sw.startedAt : 0));
+  function swStart() { if (sw.running) return; sw.running = true; sw.startedAt = Date.now(); saveSw(); wakeLock(true); }
+  function swPause() { if (!sw.running) return; sw.base = swMs(); sw.running = false; sw.startedAt = 0; saveSw(); wakeLock(false); }
+  function swReset() { sw = { running: false, base: 0, startedAt: 0 }; saveSw(); wakeLock(false); }
+
+  // 計測中は画面が消えないようにする（対応している端末のみ）
+  let lock = null;
+  async function wakeLock(on) {
+    try {
+      if (on && 'wakeLock' in navigator && !lock && document.visibilityState === 'visible') {
+        lock = await navigator.wakeLock.request('screen');
+        lock.addEventListener('release', () => { lock = null; });
+      } else if (!on && lock) { await lock.release(); lock = null; }
+    } catch (e) { lock = null; }
+  }
+
   /* ---------------- 状態 ---------------- */
   const t0 = new Date();
   const state = {
@@ -103,7 +156,7 @@
     calY: t0.getFullYear(), calM: t0.getMonth(), sel: todayStr(),
     anaView: 'month', anaYear: t0.getFullYear(),
     sheet: null,           // 'record' | 'settings'
-    form: null,            // { id, date, typeId, memo }
+    form: null,            // { id, date, typeId, memo, durationSec, focus, fromStopwatch }
     editTypes: false, addingType: false, newName: '', newColor: PALETTE[5][0]
   };
 
@@ -150,7 +203,7 @@
       const t = typeById(r.typeId);
       return `<button class="rec" data-action="edit-record" data-id="${r.id}" aria-label="${esc(t.name)}の記録を編集">` +
         `<span class="badge" style="--c:${t.color};--bg-c:${tint(t.color)}"><i></i></span>` +
-        `<span class="txt"><span class="name">${esc(t.name)}</span><span class="memo">${esc(r.memo || 'メモなし')}</span></span>${ICON.edit}</button>`;
+        `<span class="txt"><span class="name">${esc(t.name)}</span><span class="memo">${esc(recMeta(r))}</span></span>${ICON.edit}</button>`;
     }).join('');
 
     $('#view-calendar').innerHTML = `
@@ -177,6 +230,58 @@
         <div class="row-between"><h2>${fmtMD(sel)}${sel === today ? ' · 今日' : ''}</h2><span class="muted" style="font-size:13px">${selRecs.length ? selRecs.length + '件' : ''}</span></div>
         ${selItems || '<button class="dashed" data-action="add-record">' + ICON.plus + 'この日の運動を追加</button>'}
       </section>`;
+  }
+
+  /* ---------------- ストップウォッチ画面 ---------------- */
+  const RING = 816.8; // 2πr (r=130)
+  function renderStopwatch() {
+    $('#view-stopwatch').innerHTML = `
+      <header class="page-head"><div class="page-title"><h1 class="num">ストップウォッチ</h1></div></header>
+      <div class="sw-dial">
+        <svg viewBox="0 0 290 290" aria-hidden="true">
+          <circle cx="145" cy="145" r="130" fill="none" stroke="var(--surface2)" stroke-width="10"/>
+          <circle id="sw-ring" cx="145" cy="145" r="130" fill="none" stroke="var(--accent)" stroke-width="10" stroke-linecap="round" stroke-dasharray="${RING}" stroke-dashoffset="${RING}" transform="rotate(-90 145 145)"/>
+        </svg>
+        <div class="sw-center">
+          <span id="sw-clock" class="sw-clock num" role="timer" aria-live="off">00:00:00</span>
+          <span id="sw-tenth" class="sw-tenth num">.0</span>
+          <span id="sw-status" class="sw-status"></span>
+        </div>
+      </div>
+      <div class="sw-controls">
+        <div class="sw-btn"><button class="sw-round" data-action="sw-reset" aria-label="リセット">${ICON.reset}</button><span>リセット</span></div>
+        <div class="sw-btn main"><button id="sw-toggle" class="sw-round big" data-action="sw-toggle"></button><span id="sw-toggle-label"></span></div>
+        <div class="sw-btn"><button id="sw-record" class="sw-round go" data-action="sw-record" aria-label="この時間で記録する">${ICON.check}</button><span>記録する</span></div>
+      </div>
+      <p class="muted small center">運動を始めたらスタート。終わったら「記録する」で<br>時間が記録画面に入ります。アプリを閉じても計測は続きます。</p>`;
+    tickStopwatch();
+  }
+  function tickStopwatch() {
+    const clock = $('#sw-clock');
+    if (!clock) return;
+    const ms = swMs();
+    const total = Math.floor(ms / 1000);
+    clock.textContent = `${pad(Math.floor(total / 3600))}:${pad(Math.floor(total / 60) % 60)}:${pad(total % 60)}`;
+    $('#sw-tenth').textContent = '.' + (Math.floor(ms / 100) % 10);
+    $('#sw-ring').setAttribute('stroke-dashoffset', (RING * (1 - (ms % 60000) / 60000)).toFixed(1));
+    const st = $('#sw-status');
+    st.textContent = sw.running ? '計測中' : ms > 0 ? '一時停止中' : 'スタートを押して計測';
+    st.classList.toggle('on', sw.running);
+    const label = sw.running ? '一時停止' : ms > 0 ? '再開' : 'スタート';
+    const tg = $('#sw-toggle');
+    if (tg.dataset.mode !== label) {
+      tg.dataset.mode = label;
+      tg.innerHTML = sw.running ? ICON.pause : ICON.play;
+      tg.setAttribute('aria-label', label);
+      $('#sw-toggle-label').textContent = label;
+    }
+    $('#sw-record').disabled = ms < 1000;
+  }
+  let swTimer = null;
+  function syncTicker() {
+    const need = state.tab === 'stopwatch' && sw.running && document.visibilityState === 'visible';
+    if (need && !swTimer) swTimer = setInterval(tickStopwatch, 100);
+    if (!need && swTimer) { clearInterval(swTimer); swTimer = null; }
   }
 
   /* ---------------- 分析 ---------------- */
@@ -360,6 +465,24 @@
           </div>` : ''}
         </div>
         <div class="field">
+          <span class="flabel">運動時間</span>
+          ${durationField(f)}
+        </div>
+        <div class="field">
+          <div class="row-between focus-head">
+            <label class="flabel" for="f-focus">集中度</label>
+            <output id="f-focus-val" class="focus-val num ${focusClass(f.focus)}" for="f-focus">${signed(f.focus)}</output>
+          </div>
+          <div class="focus-box">
+            <input id="f-focus" class="focus-range ${focusClass(f.focus)}" type="range" min="-10" max="10" step="1" value="${f.focus}" aria-valuetext="${signed(f.focus)}" style="--p:${(f.focus + 10) * 5}%">
+            <div class="focus-scale" aria-hidden="true">
+              <span class="l"><b>いまいち</b><span>−10</span></span>
+              <span class="c">0</span>
+              <span class="r"><b>良かった</b><span>+10</span></span>
+            </div>
+          </div>
+        </div>
+        <div class="field">
           <label class="flabel" for="f-memo">メモ（任意）</label>
           <textarea id="f-memo" class="memo" rows="3" maxlength="200" placeholder="距離・部位・感想など"></textarea>
         </div>
@@ -371,10 +494,31 @@
     if (nn) nn.value = state.newName;
   }
 
-  function openRecordSheet(rec) {
+  function durationField(f) {
+    if (f.durationSec) {
+      return `<div class="dur-box">
+        <span class="dur-ico">${ICON.watch}</span>
+        <span class="dur-val">${durHtml(f.durationSec)}</span>
+        ${f.fromStopwatch ? '<span class="muted" style="font-size:12px">ストップウォッチ</span>' : ''}
+        <button class="dur-clear" data-action="clear-duration" aria-label="運動時間を消す">${ICON.close}</button>
+      </div>`;
+    }
+    const ms = swMs();
+    if (!f.id && ms >= 1000) {
+      return `<button class="dur-box dur-use" data-action="use-stopwatch"><span class="dur-ico">${ICON.watch}</span><span>ストップウォッチの時間を使う（${fmtDur(Math.round(ms / 1000))}）</span></button>`;
+    }
+    return '<div class="dur-box dur-none"><span class="dur-ico">' + ICON.watch + '</span><span class="muted" style="font-size:14px">なし（ストップウォッチで計測すると入ります）</span></div>';
+  }
+  function durHtml(sec) {
+    const h = Math.floor(sec / 3600), m = Math.floor(sec / 60) % 60, s = sec % 60;
+    const n = (v) => `<b class="num">${v}</b>`;
+    return h ? `${n(h)} 時間 ${n(m)} 分` : `${n(m)} 分 ${n(s)} 秒`;
+  }
+
+  function openRecordSheet(rec, opts = {}) {
     state.form = rec
-      ? { id: rec.id, date: rec.date, typeId: rec.typeId, memo: rec.memo || '' }
-      : { id: null, date: state.sel, typeId: (activeTypes()[0] || {}).id || null, memo: '' };
+      ? { id: rec.id, date: rec.date, typeId: rec.typeId, memo: rec.memo || '', durationSec: cleanDuration(rec.durationSec), focus: cleanFocus(rec.focus) ?? 0, fromStopwatch: false }
+      : { id: null, date: opts.date || state.sel, typeId: (activeTypes()[0] || {}).id || null, memo: '', durationSec: opts.durationSec || null, focus: 0, fromStopwatch: !!opts.durationSec };
     if (!rec && state.lastTypeId && activeTypes().some((t) => t.id === state.lastTypeId)) state.form.typeId = state.lastTypeId;
     state.editTypes = false; state.addingType = false; state.newName = '';
     renderRecordSheet();
@@ -403,14 +547,18 @@
 
   /* ---------------- 全体描画 ---------------- */
   function render() {
-    const cal = state.tab === 'calendar';
-    $('#view-calendar').hidden = !cal;
-    $('#view-analysis').hidden = cal;
-    $('#fab').hidden = !cal;
+    const tab = state.tab;
+    $('#view-calendar').hidden = tab !== 'calendar';
+    $('#view-stopwatch').hidden = tab !== 'stopwatch';
+    $('#view-analysis').hidden = tab !== 'analysis';
+    $('#fab').hidden = tab !== 'calendar';
     document.querySelectorAll('.tab').forEach((b) => {
-      if (b.dataset.tab === state.tab) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+      if (b.dataset.tab === tab) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
     });
-    if (cal) renderCalendar(); else renderAnalysis();
+    if (tab === 'calendar') renderCalendar();
+    else if (tab === 'stopwatch') renderStopwatch();
+    else renderAnalysis();
+    syncTicker();
   }
 
   let toastTimer;
@@ -477,13 +625,16 @@
       const f = state.form;
       f.memo = $('#f-memo').value.trim();
       if (!f.typeId || !db.types.some((t) => t.id === f.typeId)) { toast('運動の種類を選んでください'); return; }
+      const durationSec = cleanDuration(f.durationSec);
+      const focus = cleanFocus(f.focus) ?? 0;
       if (f.id) {
         const r = db.records.find((x) => x.id === f.id);
-        if (r) { r.date = f.date; r.typeId = f.typeId; r.memo = f.memo; r.updatedAt = Date.now(); }
+        if (r) { r.date = f.date; r.typeId = f.typeId; r.memo = f.memo; r.durationSec = durationSec; r.focus = focus; r.updatedAt = Date.now(); }
       } else {
-        db.records.push({ id: 'r' + uid(), date: f.date, typeId: f.typeId, memo: f.memo, createdAt: Date.now() });
+        db.records.push({ id: 'r' + uid(), date: f.date, typeId: f.typeId, memo: f.memo, durationSec, focus, createdAt: Date.now() });
       }
       if (!save()) return;
+      if (!f.id && f.fromStopwatch && durationSec) swReset(); // 記録したらストップウォッチを0に戻す
       state.lastTypeId = f.typeId;
       const d = parseYmd(f.date);
       state.calY = d.getFullYear(); state.calM = d.getMonth(); state.sel = f.date;
@@ -498,6 +649,26 @@
       closeSheet();
       render();
       toast('削除しました');
+    },
+    'clear-duration': () => { keepTyped(); state.form.durationSec = null; state.form.fromStopwatch = false; renderRecordSheet(); },
+    'use-stopwatch': () => {
+      keepTyped();
+      swPause();
+      state.form.durationSec = Math.round(swMs() / 1000);
+      state.form.fromStopwatch = true;
+      renderRecordSheet();
+      syncTicker();
+    },
+    'sw-toggle': () => { if (sw.running) swPause(); else swStart(); tickStopwatch(); syncTicker(); },
+    'sw-reset': () => {
+      if (swMs() >= 60000 && !confirm('ストップウォッチを0に戻しますか？')) return;
+      swReset(); tickStopwatch(); syncTicker();
+    },
+    'sw-record': () => {
+      swPause(); tickStopwatch(); syncTicker();
+      const sec = Math.round(swMs() / 1000);
+      if (sec < 1) return;
+      openRecordSheet(null, { durationSec: sec, date: todayStr() });
     },
     'ana-view': (b) => { state.anaView = b.dataset.v; renderAnalysis(); },
     'ana-year': (b) => { state.anaYear += Number(b.dataset.k); renderAnalysis(); },
@@ -515,7 +686,20 @@
   document.addEventListener('input', (e) => {
     if (e.target.id === 'f-newname') state.newName = e.target.value;
     if (e.target.id === 'f-memo' && state.form) state.form.memo = e.target.value;
+    if (e.target.id === 'f-focus' && state.form) {
+      // ドラッグ中は描き直さず、数字と色だけ更新する
+      const v = Number(e.target.value);
+      state.form.focus = v;
+      const out = $('#f-focus-val');
+      out.textContent = signed(v);
+      out.className = `focus-val num ${focusClass(v)}`;
+      e.target.className = `focus-range ${focusClass(v)}`;
+      e.target.style.setProperty('--p', `${(v + 10) * 5}%`);
+      e.target.setAttribute('aria-valuetext', signed(v));
+    }
   });
+  // 再描画の前に、入力途中のメモを控えておく
+  function keepTyped() { const m = $('#f-memo'); if (m && state.form) state.form.memo = m.value; }
   document.addEventListener('change', (e) => {
     if (e.target.id === 'f-date' && state.form) {
       if (e.target.value) state.form.date = e.target.value;
@@ -565,7 +749,7 @@
       const d = JSON.parse(await file.text());
       if (!isValidDb(d)) throw new Error('invalid');
       if (!confirm(`バックアップの内容（記録 ${d.records.length}件）で、今のデータを置き換えます。よろしいですか？`)) return;
-      db = { version: 1, types: d.types.map((t) => ({ id: t.id, name: t.name, color: t.color, archived: !!t.archived })), records: d.records.map((r) => ({ id: r.id, date: r.date, typeId: r.typeId, memo: typeof r.memo === 'string' ? r.memo : '', createdAt: r.createdAt || 0 })) };
+      db = { version: 1, types: d.types.map((t) => ({ id: t.id, name: t.name, color: t.color, archived: !!t.archived })), records: d.records.map((r) => ({ id: r.id, date: r.date, typeId: r.typeId, memo: typeof r.memo === 'string' ? r.memo : '', durationSec: cleanDuration(r.durationSec), focus: cleanFocus(r.focus), createdAt: r.createdAt || 0 })) };
       save();
       closeSheet();
       render();
@@ -578,7 +762,9 @@
   // 日付が変わったとき・アプリに戻ったときに描き直す
   let lastDay = todayStr();
   document.addEventListener('visibilitychange', () => {
+    syncTicker();
     if (document.visibilityState !== 'visible') return;
+    if (sw.running) wakeLock(true); // 画面ロックで外れた分を取り直す
     const t = todayStr();
     if (t !== lastDay) {
       if (state.sel === lastDay) state.sel = t;
@@ -588,7 +774,10 @@
     if (!state.sheet) render();
   });
 
+  // 前回計測中のまま閉じていたら、ストップウォッチ画面から始める
+  if (sw.running) state.tab = 'stopwatch';
   render();
+  if (sw.running) wakeLock(true);
 
   if ('serviceWorker' in navigator && location.protocol !== 'file:') {
     window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
